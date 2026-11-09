@@ -144,3 +144,5 @@ h1 em{font-style:normal;color:var(--gold);display:inline-block;transform:rotate(
 #carousel .cTag{position:absolute;left:-2px;top:-2px;background:#ffc94a;color:#5b3a00;font-size:13px;padding:1px 6px;border-radius:0 0 10px 0;z-index:1}
 .tile.car{transition:opacity .2s,filter .25s}
 .tile.car.hid{pointer-events:none}
+.tile .face .let{font-family:"Arial Rounded MT Bold","Arial Black",ui-rounded,system-ui,sans-serif;font-weight:900;line-height:1;text-shadow:0 2px 0 rgba(0,0,0,.15);letter-spacing:-1px}
+.chips .chip{font-size:13px;padding:7px 10px}

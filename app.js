@@ -70,7 +70,7 @@ function startLevel(n){
 }
 function setFace(el,type){
   const f=el.firstChild;
-  if(G.theme.crest)f.innerHTML=crestSVG(G.theme.items[type]);else f.textContent=G.theme.items[type];
+  const it=G.theme.items[type];if(typeof it==='string')f.textContent=it;else f.innerHTML=it.h;
   el.classList.toggle('gold',G.s.gold.includes(type));
 }
 function rel(el){const g=$('game').getBoundingClientRect(),r=el.getBoundingClientRect();return {x:r.left-g.left,y:r.top-g.top,w:r.width,h:r.height};}
