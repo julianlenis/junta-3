@@ -134,3 +134,13 @@ h1 em{font-style:normal;color:var(--gold);display:inline-block;transform:rotate(
 #reward .ri{font-size:54px;line-height:1.1;margin:4px 0;animation:spin 1s ease-out}
 @keyframes spin{from{transform:rotateY(360deg) scale(.5)}}
 #reward .rv{font-weight:900;font-size:24px;color:#6b2a00}
+
+/* carrusel */
+#carousel{display:none;height:calc(var(--slot,52px) + 18px);border-radius:18px;position:relative;overflow:hidden;
+ background:repeating-linear-gradient(90deg,#4a1838 0 18px,#5b2147 18px 36px);box-shadow:inset 0 3px 8px rgba(0,0,0,.45),0 3px 0 rgba(255,255,255,.2);
+ border:3px solid #ffc94a;animation:belt 1.2s linear infinite}
+#carousel.on{display:block}
+@keyframes belt{to{background-position:-36px 0}}
+#carousel .cTag{position:absolute;left:-2px;top:-2px;background:#ffc94a;color:#5b3a00;font-size:13px;padding:1px 6px;border-radius:0 0 10px 0;z-index:1}
+.tile.car{transition:opacity .2s,filter .25s}
+.tile.car.hid{pointer-events:none}

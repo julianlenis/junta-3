@@ -42,8 +42,8 @@
     <div id="shop" class="shop"></div>
   </div>
   <details class="card how"><summary>¿Cómo se juega?</summary>
-    <p>Toca una ficha <b>libre</b> (las oscuras están tapadas) y sube a la bandeja. Cuando juntas <b>3 iguales</b>, desaparecen. Si la bandeja se llena con 7 fichas, pierdes. ¡Limpia el tablero antes de que acabe el tiempo!</p>
-    <p>Ayudas: <b>↩️ Deshacer</b> la última ficha, <b>⏏️ Sacar 3</b> fichas de la bandeja y <b>🔀 Mezclar</b> el tablero. Las <b>✨ fichas doradas</b> dan premio: monedas, una ayuda gratis o más tiempo. Cada nivel tiene un paisaje, una hora del día y una forma distintos. Cada 10 niveles hay un 🔥 <b>nivel difícil</b> con premio doble.</p>
+    <p>Toca una ficha <b>libre</b> (las oscuras están tapadas) y sube a la bandeja. Cuando juntas <b>3 iguales</b>, desaparecen. Si la bandeja se llena con 7 fichas, pierdes. ¡Limpia el tablero! No hay prisa: no hay tiempo, pero cuantas menos ayudas uses, más estrellas.</p>
+    <p>Ayudas: <b>↩️ Deshacer</b> la última ficha, <b>⏏️ Sacar 3</b> fichas de la bandeja y <b>🔀 Mezclar</b> el tablero. Las <b>✨ fichas doradas</b> dan premio: monedas, una ayuda gratis o más tiempo. En algunos niveles hay un <b>🎠 carrusel</b> de fichas que gira abajo: toca las que pasan. Cada nivel tiene un paisaje, una hora del día y una forma distintos. Cada 10 niveles hay un 🔥 <b>nivel difícil</b> con premio doble.</p>
   </details>
   <p class="foot">Junta 3 by Julián Lenis · todos los niveles tienen solución</p>
 </section>
@@ -54,12 +54,13 @@
   <div class="gTop">
     <button id="bPause" class="round small" aria-label="Pausa">⏸</button>
     <div class="gLvl"><span id="gLvl">Nivel 1</span><small id="gTheme"></small></div>
-    <div id="gTime" class="pill timer">⏱ 0:00</div>
+    <div id="gLeft" class="pill">🧩 0</div>
     <div class="pill coins">🪙 <b class="coinVal">0</b></div>
   </div>
   <div id="trayWrap"><div id="tray"></div></div>
   <div id="hold"></div>
   <div id="board"></div>
+  <div id="carousel"><span class="cTag">🎠</span></div>
   <div class="gBottom">
     <button class="boost" data-b="undo"><span class="bi">↩️</span><span class="bl">Deshacer</span><i class="badge"></i></button>
     <button class="boost" data-b="remove"><span class="bi">⏏️</span><span class="bl">Sacar 3</span><i class="badge"></i></button>

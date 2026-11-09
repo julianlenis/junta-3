@@ -6,7 +6,7 @@ const CREST_SHAPES=[
  'M50 4 C64 12 80 12 92 8 V50 C92 78 74 96 50 106 C26 96 8 78 8 50 V8 C20 12 36 12 50 4 Z'];
 const CREST_COLORS=[['#d62839','#ffffff'],['#1d4ed8','#ffffff'],['#15803d','#ffffff'],['#facc15','#1e3a8a'],['#111827','#ffffff'],['#38bdf8','#ffffff'],
  ['#7c3aed','#fde047'],['#f97316','#111827'],['#b91c1c','#1e40af'],['#16a34a','#facc15'],['#1e3a8a','#dc2626'],['#7f1d1d','#7dd3fc']];
-const CREST_TXT=['AC','UD','RC','SD','CF','AD','FC','SC','CA','UC','RD','CD','AT','DE','UN','RS','SP','CE','OL','VA','MA','TO','ES','LO'];
+const CREST_TXT=['AC','UD','RC','SD','CF','AD','FC','SC','CA','UC','RD','CD','AT','DE','UN','RS','SP','CE','OL','VA','MA','TO','ES','LO','BR','PE','CU','NO','SU','GA'];
 function crestPattern(k,a,b){
   switch(k){
    case 0:return `<rect width="100" height="110" fill="${a}"/>`;
@@ -20,7 +20,7 @@ function crestPattern(k,a,b){
   }
 }
 function crestSVG(i){
-  const sh=CREST_SHAPES[i%3],[a,b]=CREST_COLORS[i%12],pat=i%8,txt=CREST_TXT[i%24],id='cr'+i;
+  const sh=CREST_SHAPES[i%3];let [a,b]=CREST_COLORS[i%12];if(i>=24)[a,b]=[b==='#ffffff'?'#0f766e':b,a];const pat=i%8,txt=CREST_TXT[i%30],id='cr'+i;
   return `<svg viewBox="-4 -4 108 118" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="${id}"><path d="${sh}"/></clipPath></defs>`+
    `<path d="${sh}" fill="#f5c542" stroke="#7a4b12" stroke-width="7" stroke-linejoin="round"/>`+
    `<g clip-path="url(#${id})">${crestPattern(pat,a,b)}</g>`+
@@ -29,10 +29,10 @@ function crestSVG(i){
    `<text x="50" y="63" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="21" fill="${a==='#ffffff'?'#111':(a==='#facc15'?'#1e3a8a':a)}">${txt}</text></svg>`;
 }
 const THEMES=[
- {id:'frutas',name:'Frutas',icon:'🍓',items:['🍎','🍏','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🥑','🍆','🥕','🌽','🥦','🌶️']},
- {id:'animales',name:'Animales',icon:'🐶',items:['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🦉','🦄','🐝','🐢','🐙','🦀','🐬']},
- {id:'escudos',name:'Escudos',icon:'🛡️',crest:true,items:Array.from({length:24},(_,i)=>i)},
- {id:'objetos',name:'Objetos',icon:'🎁',items:['⚽','🎸','🎧','📱','💡','🔑','⏰','📷','🎁','🎈','✏️','📚','🧸','🎨','🔔','☂️','👑','💎','🎺','🥁','🕶️','🧲','🎤','🚲']}];
+ {id:'frutas',name:'Frutas',icon:'🍓',items:['🍎','🍏','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🥑','🍆','🥕','🌽','🥦','🌶️','🥬','🫑','🥔','🧄','🥜','🫒']},
+ {id:'animales',name:'Animales',icon:'🐶',items:['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🦉','🦄','🐝','🐢','🐙','🦀','🐬','🐞','🦋','🐌','🦓','🦒','🐘']},
+ {id:'escudos',name:'Escudos',icon:'🛡️',crest:true,items:Array.from({length:30},(_,i)=>i)},
+ {id:'objetos',name:'Objetos',icon:'🎁',items:['⚽','🎸','🎧','📱','💡','🔑','⏰','📷','🎁','🎈','✏️','📚','🧸','🎨','🔔','☂️','👑','💎','🎺','🥁','🕶️','🧲','🎤','🚲','🔦','🧭','⚓','🪁','🎮','🏀']}];
 const API={THEMES,crestSVG};
 if(typeof module!=='undefined'&&module.exports)module.exports=API;else Object.assign(root,API);
 })(this);

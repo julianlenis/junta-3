@@ -10,17 +10,17 @@ function shuffleArr(a,r){for(let i=a.length-1;i>0;i--){const j=ri(r,i+1);[a[i],a
 function levelParams(n,maxTypes){
   maxTypes=maxTypes||18;
   const hard=n%10===0;
-  // 1-2: tutorial. Después sube más rápido y sigue creciendo pasado el 64.
-  let triples=n<=2?6:Math.min(7+Math.floor((n-2)*1.05),56)+Math.min(Math.floor(Math.max(0,n-52)/8),10);
-  if(hard)triples=Math.min(Math.round(triples*1.25)+1,72);
-  let types=n<=2?3:Math.min(4+Math.floor((n-3)/2.4)+(hard?2:0),maxTypes);
+  // Sin tiempo. Más difícil desde el nivel 1 y sigue subiendo sin parar de crecer hasta ~nivel 115.
+  let triples=Math.min(10+Math.floor((n-1)*1.3),60)+Math.min(Math.floor(Math.max(0,n-45)/6),12);
+  if(hard)triples=Math.min(Math.round(triples*1.25)+1,80);
+  let types=Math.min(5+Math.floor((n-1)/1.8)+(hard?2:0),maxTypes);
   types=Math.min(types,triples);
-  const layers=n<=2?2:Math.min(3+Math.floor((n-3)/4)+(hard?1:0),12);
-  let L=n<=2?2:Math.min(6,3+Math.floor((n-3)/8));
+  const layers=Math.min(3+Math.floor((n-1)/3)+(hard?1:0),13);
+  let L=n<=1?3:Math.min(6,3+Math.floor((n-2)/6));
   if(hard)L=Math.min(6,L+2);
-  const perTile=(n<=2?5:(n<=68?4.6-(n-3)*0.04:Math.max(1.6,2.0-(n-68)*0.004)))*(hard?0.88:1);
-  return {n,hard,triples,types,layers,L,shape:shapeFor(n)[0],shapeName:shapeFor(n)[1],pNew:Math.min(0.75,0.35+n*0.01),
-    time:Math.ceil(triples*3*perTile/5)*5};
+  // carrusel: cada 3 niveles y en los difíciles
+  const carousel=(n%3===0||hard)?Math.min(15,(hard?9:6)+3*Math.floor(n/15)):0;
+  return {n,hard,triples,types,layers,L,carousel,shape:shapeFor(n)[0],shapeName:shapeFor(n)[1],pNew:Math.min(0.75,0.4+n*0.01)};
 }
 
 /* Formas del tablero (cambian cada nivel). u,v en [-1,1] */
@@ -142,7 +142,10 @@ function genLevel(n,maxTypes){
   const p=levelParams(n,maxTypes);
   const r=rng(n*7919+13);
   for(let attempt=0;attempt<200;attempt++){
-    const tiles=genLayout(p,r);
+    const K=p.carousel||0;
+    const tiles=genLayout(Object.assign({},p,{triples:p.triples-K/3}),r);
+    // fichas del carrusel: siempre disponibles (el carrusel gira y todas pasan por delante)
+    for(let k=0;k<K;k++)tiles.push({id:tiles.length,x:-9,y:-9,z:0,car:true,ci:k,above:[],below:[]});
     const triples=tiles.length/3;if(triples<2)continue;
     const types=Math.min(p.types,triples);
     // presupuesto de tríos por tipo

@@ -4,7 +4,7 @@ const $=id=>document.getElementById(id);
 const PRICES={undo:30,remove:60,shuffle:45};
 const BNAME={undo:'Deshacer',remove:'Sacar 3',shuffle:'Mezclar'};
 const BICON={undo:'↩️',remove:'⏏️',shuffle:'🔀'};
-const MAXT=24;
+const MAXT=30;
 let save=load();
 function load(){let s={};try{s=JSON.parse(localStorage.getItem('j3_save')||'{}')}catch(e){}
   return Object.assign({level:1,coins:100,b:{undo:2,remove:1,shuffle:1},theme:'auto',sound:true,best:{}},s);}
@@ -28,7 +28,7 @@ function renderHome(){
   const n=save.level,p=Engine.levelParams(n,MAXT),th=themeFor(n);
   $('hLvl').textContent=n;
   $('hLvlTag').textContent=p.hard?'🔥 Nivel difícil · premio doble':'Nivel';$('hLvlTag').className='tag'+(p.hard?' hard':'');
-  $('hInfo').textContent=`${th.icon} ${th.name} · ${p.triples*3} fichas · ${fmt(p.time)} min`;
+  $('hInfo').textContent=`${th.icon} ${th.name} · ${p.triples*3} fichas · ${p.types} tipos${p.carousel?' · 🎠 carrusel':''}`;
   const sc=Scenes.sceneFor(n);$('hScene').textContent=`${sc.label} · forma ${p.shapeName}`;
   const ch=[{id:'auto',name:'Cambia cada nivel',icon:'🔄'},...THEMES];
   $('themes').innerHTML=ch.map(t=>`<button class="chip${save.theme===t.id?' on':''}" data-t="${t.id}">${t.icon} ${t.name}</button>`).join('');
@@ -50,7 +50,8 @@ function startLevel(n){
   const lv=Engine.genLevel(n,MAXT);
   const th=themeFor(n);
   const sc=Scenes.sceneFor(n);
-  G={n,lv,sc,s:Engine.newGame(lv),theme:th,els:{},left:lv.p.time,visTray:null,last:performance.now(),over:false,golds:0};
+  G={n,lv,sc,s:Engine.newGame(lv),theme:th,els:{},visTray:null,last:performance.now(),over:false,golds:0,used:0,off:0,car:null};
+  $('carousel').classList.toggle('on',lv.p.carousel>0);
   $('scene').innerHTML=Scenes.sceneSVG(sc)+'<div id="fx">'+Scenes.fxHTML(sc)+'</div>';
   show('game');
   $('gLvl').textContent=(lv.p.hard?'🔥 ':'')+'Nivel '+n;$('gTheme').textContent=th.icon+' '+th.name+' · '+sc.land.icon+' '+sc.land.name;
@@ -59,12 +60,13 @@ function startLevel(n){
     const el=document.createElement('div');el.className='tile in';el.dataset.id=t.id;
     el.innerHTML='<div class="face"></div>';setFace(el,t.type);
     el.style.animationDelay=(t.z*0.07+t.y*0.015)+'s';
+    if(t.car)el.classList.add('car','hid');
     el.addEventListener('pointerdown',ev=>{ev.preventDefault();tap(t.id);});
     st.appendChild(el);G.els[t.id]=el;
   }
-  layout(true);updBoost();updTimer();
+  layout(true);updBoost();
   setTimeout(()=>Object.values(G.els).forEach(e=>e.classList.remove('in')),1200);
-  toast((lv.p.hard?'🔥 ¡Nivel difícil! Premio doble<br>':'')+sc.label+'<br><small>Forma: '+lv.p.shapeName+' · ✨ busca las fichas doradas</small>',2200);
+  toast((lv.p.hard?'🔥 ¡Nivel difícil! Premio doble<br>':'')+(lv.p.carousel?'🎠 Nivel con carrusel<br>':'')+sc.label+'<br><small>Forma: '+lv.p.shapeName+' · ✨ busca las fichas doradas</small>',2200);
 }
 function setFace(el,type){
   const f=el.firstChild;
@@ -82,7 +84,7 @@ function layout(first){
   const tr=rel($('tray'));
   // tablero
   let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,zM=0;
-  for(const t of tiles){x0=Math.min(x0,t.x);x1=Math.max(x1,t.x);y0=Math.min(y0,t.y);y1=Math.max(y1,t.y);zM=Math.max(zM,t.z);}
+  for(const t of tiles){if(t.car)continue;x0=Math.min(x0,t.x);x1=Math.max(x1,t.x);y0=Math.min(y0,t.y);y1=Math.max(y1,t.y);zM=Math.max(zM,t.z);}
   const cols=x1-x0+1,rows=y1-y0+1;
   let S=Math.min(b.w/cols,(b.h-8)/(rows*1.15+zM*0.06+0.12),74);S=Math.floor(S);
   const H=S*1.15,lift=S*0.06;
@@ -95,6 +97,7 @@ function layout(first){
   const vt=G.visTray||G.s.tray;
   for(const t of tiles){
     const el=G.els[t.id];let X,Y,sc=1,z;
+    if(t.where==='board'&&t.car)continue;
     if(t.where==='board'){X=ox+(t.x-x0)*S;Y=oy+(t.y-y0)*H-t.z*lift;z=10+t.z*300+Math.round(t.y*2)*12+Math.round(t.x*2);
       el.classList.toggle('dim',!Engine.isFree(G.s,t.id));}
     else if(t.where==='tray'||(t.where==='gone'&&vt.includes(t.id))){const i=vt.indexOf(t.id);if(i<0)continue;X=tr.x+i*(slotW+4);Y=tr.y;sc=k;z=6000+i;el.classList.remove('dim');}
@@ -103,14 +106,31 @@ function layout(first){
     el.style.zIndex=z;el.style.transform=`translate(${X}px,${Y}px) scale(${sc})`;
   }
   $('tray').classList.toggle('danger',G.s.tray.length>=5);
+  $('gLeft').textContent='🧩 '+tiles.filter(t=>t.where!=='gone').length;
+  if(G.lv.p.carousel){const c=rel($('carousel'));const sp=slotW+10;G.car={x:c.x,y:c.y+(c.h-slotH)/2-2,w:c.w,sp,k,Lp:Math.max(G.lv.p.carousel*sp,c.w+sp)};carTick(0);}
 }
+/* carrusel: gira sin parar; todas las fichas pasan por delante */
+let lastT=0;
+function carTick(dt){
+  if(!G||!G.car)return;const c=G.car;
+  if(!(G.paused||G.over||$('modal').classList.contains('on')))G.off+=dt*0.032;
+  for(const t of G.s.tiles){if(!t.car||t.where!=='board')continue;const el=G.els[t.id];
+    if(!el.classList.contains('car')){el.classList.add('car');}
+    const x=(((t.ci*c.sp-G.off)%c.Lp)+c.Lp)%c.Lp;const X=c.x+x-c.sp+8;
+    const vis=X>c.x-c.sp*0.2&&X<c.x+c.w-c.sp*0.8;
+    const edge=Math.min(X-c.x,c.x+c.w-(X+c.sp-10));const op=Math.max(0,Math.min(1,(edge+c.sp*0.3)/(c.sp*0.5)));
+    el.style.opacity=op;el.classList.toggle('hid',!vis||op<0.6);el.classList.remove('dim');
+    el.style.zIndex=4000;el.style.transform=`translate(${X}px,${c.y}px) scale(${c.k})`;}
+}
+function loop(ts){const dt=lastT?Math.min(100,ts-lastT):0;lastT=ts;if(G&&G.car&&!document.hidden)carTick(dt);requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
 function tap(id){
   if(!G||G.over||G.paused)return;
   const s=G.s,pre=s.tray.slice(),t=s.tiles[id];
   if(!Engine.isFree(s,id)){return;}
   const ev=Engine.pick(s,id);if(!ev.ok)return;
   SND.tap();
-  const el=G.els[id];el.classList.add('fly');setTimeout(()=>el.classList.remove('fly'),320);
+  const el=G.els[id];if(t.car){el.classList.remove('car','hid');el.style.opacity=1;}el.classList.add('fly');setTimeout(()=>el.classList.remove('fly'),320);
   if(ev.match){
     // mostrar el trío completo en la bandeja y luego hacerlo estallar
     const vis=pre.slice();let pos=-1;for(let i=0;i<vis.length;i++)if(s.tiles[vis[i]].type===t.type)pos=i;
@@ -144,7 +164,7 @@ function useBoost(k,fromLose){
   if(k==='remove'){if(!s.tray.length){SND.no();toast('La bandeja está vacía');return false;}if(s.hold.length){SND.no();toast('Primero usa las fichas que apartaste');return false;}}
   if(k==='shuffle'&&Engine.boardLeft(s)<2){SND.no();return false;}
   if(save.b[k]<=0){if(!buy(k))return false;}
-  save.b[k]--;store();updBoost();SND.boost();
+  save.b[k]--;G.used++;store();updBoost();SND.boost();
   if(k==='undo'){Engine.undo(s);layout();}
   else if(k==='remove'){Engine.remove3(s);layout();}
   else{Engine.shuffle(s);const els=s.tiles.filter(t=>t.where==='board').map(t=>G.els[t.id]);
@@ -153,34 +173,27 @@ function useBoost(k,fromLose){
     setTimeout(()=>{s.tiles.filter(t=>t.where==='board').forEach(t=>setFace(G.els[t.id],t.type));els.forEach(e=>{e.style.transition='';});layout();},200);}
   return true;
 }
-/* tiempo */
-function updTimer(){const e=$('gTime');e.textContent='⏱ '+fmt(G.left);e.classList.toggle('low',G.left<=15);}
-setInterval(()=>{const now=performance.now();if(!G){return;}const dt=(now-G.last)/1000;G.last=now;
-  if(G.over||G.paused||document.hidden||$('modal').classList.contains('on')||!$('game').classList.contains('show'))return;
-  G.left-=dt;updTimer();if(G.left<=0){G.left=0;G.over=true;G.s.status='lose';G.s.reason='time';updTimer();lose('time');}},250);
 /* fin */
 function win(){
   G.over=true;SND.win();
-  const p=G.lv.p,frac=G.left/p.time,stars=frac>0.5?3:frac>0.25?2:1;
+  const p=G.lv.p,stars=G.used===0?3:G.used===1?2:1;
   let coins=(10+Math.floor(G.n/2)+stars*5)*(p.hard?2:1);
   save.coins+=coins;save.best[G.n]=Math.max(save.best[G.n]||0,stars);
   if(G.n===save.level)save.level++;store();
   modal({icon:p.hard?'🏆':'🎉',title:p.hard?'¡Nivel difícil superado!':'¡Nivel '+G.n+' superado!',
-    body:`<div class="stars">${[1,2,3].map(i=>`<span class="${i<=stars?'':'off'}">⭐</span>`).join('')}</div>Te sobraron ${fmt(G.left)}${G.golds?' · ✨ '+G.golds+(G.golds>1?' tríos dorados':' trío dorado'):''}<br><span class="reward">+${coins} 🪙${p.hard?' (premio doble)':''}</span>`,
+    body:`<div class="stars">${[1,2,3].map(i=>`<span class="${i<=stars?'':'off'}">⭐</span>`).join('')}</div>${G.used?'Ayudas usadas: '+G.used:'¡Sin usar ayudas!'}${G.golds?' · ✨ '+G.golds+(G.golds>1?' tríos dorados':' trío dorado'):''}<br><span class="reward">+${coins} 🪙${p.hard?' (premio doble)':''}</span>`,
     btns:[{t:'Siguiente nivel ▶',c:'primary big',f:()=>startLevel(G.n+1)},{t:'Inicio',f:goHome}]});
 }
 function lose(reason){
   SND.lose();
   const btns=[];
-  if(reason==='full')btns.push({t:`⏏️ Sacar 3 y seguir (${save.b.remove>0?'tienes '+save.b.remove:'🪙'+PRICES.remove})`,c:'green',f:()=>{G.over=false;if(!useBoost('remove',true)){G.over=true;setTimeout(()=>lose('full'),50);}}});
-  else btns.push({t:'⏱ +60 segundos (🪙50)',c:'green',f:()=>{if(save.coins<50){toast('No tienes monedas suficientes');setTimeout(()=>lose('time'),900);return;}save.coins-=50;store();G.left+=60;G.over=false;G.s.status='play';G.last=performance.now();updTimer();}});
+  btns.push({t:`⏏️ Sacar 3 y seguir (${save.b.remove>0?'tienes '+save.b.remove:'🪙'+PRICES.remove})`,c:'green',f:()=>{G.over=false;if(!useBoost('remove',true)){G.over=true;setTimeout(()=>lose('full'),50);}}});
   btns.push({t:'Reintentar ↻',c:'primary big',f:()=>startLevel(G.n)},{t:'Inicio',f:goHome});
-  modal({icon:reason==='full'?'😵':'⏰',title:reason==='full'?'¡Bandeja llena!':'¡Se acabó el tiempo!',
-    body:reason==='full'?'Se juntaron 7 fichas sin trío. Puedes apartar 3 fichas y seguir, o volver a intentarlo.':'Puedes comprar más tiempo o volver a intentarlo.',btns});
+  modal({icon:'😵',title:'¡Bandeja llena!',body:'Se juntaron 7 fichas sin trío. Puedes apartar 3 fichas y seguir, o volver a intentarlo.',btns});
 }
 function goHome(){G=null;show('home');renderHome();}
 $('bPause').onclick=()=>{if(!G||G.over)return;G.paused=true;
-  modal({icon:'⏸',title:'Pausa',body:'Nivel '+G.n,btns:[{t:'Continuar ▶',c:'primary big',f:()=>{G.paused=false;G.last=performance.now();}},{t:'Reiniciar nivel ↻',f:()=>startLevel(G.n)},{t:'Inicio',f:goHome}]});};
+  modal({icon:'⏸',title:'Pausa',body:'Nivel '+G.n,btns:[{t:'Continuar ▶',c:'primary big',f:()=>{G.paused=false;}},{t:'Reiniciar nivel ↻',f:()=>startLevel(G.n)},{t:'Inicio',f:goHome}]});};
 /* modal y avisos */
 function modal(o){
   $('mIcon').textContent=o.icon||'';$('mTitle').textContent=o.title||'';$('mBody').innerHTML=o.body||'';
@@ -191,11 +204,10 @@ function modal(o){
 let tt;function toast(h,ms){const t=$('toast');t.innerHTML=h;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),ms||1500);}
 /* premio de las fichas doradas */
 function goldReward(){
-  const R=[{t:'coins',v:25},{t:'coins',v:50},{t:'b',b:'undo'},{t:'b',b:'remove'},{t:'b',b:'shuffle'},{t:'time',v:20}];
+  const R=[{t:'coins',v:25},{t:'coins',v:50},{t:'b',b:'undo'},{t:'b',b:'remove'},{t:'b',b:'shuffle'},{t:'coins',v:75}];
   const x=R[Math.floor(Math.random()*R.length)];let icon,txt;
   if(x.t==='coins'){save.coins+=x.v;icon='🪙';txt=`+${x.v} monedas`;}
   else if(x.t==='b'){save.b[x.b]++;icon=BICON[x.b];txt=`+1 ${BNAME[x.b]} gratis`;updBoost();}
-  else{G.left+=x.v;icon='⏱️';txt=`+${x.v} segundos`;updTimer();}
   store();G.golds++;
   const el=$('reward');el.innerHTML=`<div class="rt">✨ ¡Trío dorado! ✨</div><div class="ri">${icon}</div><div class="rv">${txt}</div>`;
   el.classList.remove('on');void el.offsetWidth;el.classList.add('on');
