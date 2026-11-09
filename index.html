@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#7a2e5a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Junta 3">
+<meta name="description" content="Junta 3 by Julián Lenis: junta tres fichas iguales y limpia el tablero.">
+<title>Junta 3 by Julián Lenis</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- INICIO -->
+<section id="home" class="screen show">
+  <div class="homeTop">
+    <div class="pill coins">🪙 <b class="coinVal">0</b></div>
+    <button id="bSound" class="round small" aria-label="Sonido">🔊</button>
+  </div>
+  <div class="logo">
+    <div class="logoTiles"><span>🍓</span><span>🐶</span><span>🎁</span></div>
+    <h1>Junta <em>3</em></h1>
+    <p class="by">by Julián Lenis</p>
+  </div>
+  <div class="levelCard">
+    <div id="hLvlTag" class="tag">Nivel</div>
+    <div id="hLvl" class="bigLvl">1</div>
+    <div id="hInfo" class="lvlInfo"></div>
+    <button id="bPlay" class="btn primary big">Jugar ▶</button>
+  </div>
+  <div class="card">
+    <div class="cardTitle">Fichas</div>
+    <div id="themes" class="chips"></div>
+  </div>
+  <div class="card">
+    <div class="cardTitle">Tienda de ayudas</div>
+    <div id="shop" class="shop"></div>
+  </div>
+  <details class="card how"><summary>¿Cómo se juega?</summary>
+    <p>Toca una ficha <b>libre</b> (las oscuras están tapadas) y sube a la bandeja. Cuando juntas <b>3 iguales</b>, desaparecen. Si la bandeja se llena con 7 fichas, pierdes. ¡Limpia el tablero antes de que acabe el tiempo!</p>
+    <p>Ayudas: <b>↩️ Deshacer</b> la última ficha, <b>⏏️ Sacar 3</b> fichas de la bandeja y <b>🔀 Mezclar</b> el tablero. Cada 10 niveles hay un 🔥 <b>nivel difícil</b> con premio doble.</p>
+  </details>
+  <p class="foot">Junta 3 by Julián Lenis · todos los niveles tienen solución</p>
+</section>
+
+<!-- JUEGO -->
+<section id="game" class="screen">
+  <div class="gTop">
+    <button id="bPause" class="round small" aria-label="Pausa">⏸</button>
+    <div class="gLvl"><span id="gLvl">Nivel 1</span><small id="gTheme"></small></div>
+    <div id="gTime" class="pill timer">⏱ 0:00</div>
+    <div class="pill coins">🪙 <b class="coinVal">0</b></div>
+  </div>
+  <div id="trayWrap"><div id="tray"></div></div>
+  <div id="hold"></div>
+  <div id="board"></div>
+  <div class="gBottom">
+    <button class="boost" data-b="undo"><span class="bi">↩️</span><span class="bl">Deshacer</span><i class="badge"></i></button>
+    <button class="boost" data-b="remove"><span class="bi">⏏️</span><span class="bl">Sacar 3</span><i class="badge"></i></button>
+    <button class="boost" data-b="shuffle"><span class="bi">🔀</span><span class="bl">Mezclar</span><i class="badge"></i></button>
+  </div>
+  <div id="stage"></div>
+  <div id="toast"></div>
+</section>
+
+<!-- VENTANAS -->
+<div id="modal" class="modal"><div class="mBox">
+  <div id="mIcon" class="mIcon"></div>
+  <h2 id="mTitle"></h2>
+  <div id="mBody"></div>
+  <div id="mBtns" class="mBtns"></div>
+</div></div>
+
+<script src="engine.js"></script>
+<script src="themes.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
