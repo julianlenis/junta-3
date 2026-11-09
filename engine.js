@@ -10,18 +10,34 @@ function shuffleArr(a,r){for(let i=a.length-1;i>0;i--){const j=ri(r,i+1);[a[i],a
 function levelParams(n,maxTypes){
   maxTypes=maxTypes||18;
   const hard=n%10===0;
-  let triples=Math.min(6+Math.floor((n-1)*0.8),48);
-  if(hard)triples=Math.min(Math.round(triples*1.25)+1,56);
-  let types=Math.min(3+Math.floor((n-1)/3)+(hard?2:0),maxTypes);
+  // 1-2: tutorial. Después sube más rápido y sigue creciendo pasado el 64.
+  let triples=n<=2?6:Math.min(7+Math.floor((n-2)*1.05),56)+Math.min(Math.floor(Math.max(0,n-52)/8),10);
+  if(hard)triples=Math.min(Math.round(triples*1.25)+1,72);
+  let types=n<=2?3:Math.min(4+Math.floor((n-3)/2.4)+(hard?2:0),maxTypes);
   types=Math.min(types,triples);
-  const layers=Math.min(2+Math.floor((n-1)/5)+(hard?1:0),hard?9:8);
-  let L=n<=2?2:Math.min(6,3+Math.floor((n-3)/10));
+  const layers=n<=2?2:Math.min(3+Math.floor((n-3)/4)+(hard?1:0),12);
+  let L=n<=2?2:Math.min(6,3+Math.floor((n-3)/8));
   if(hard)L=Math.min(6,L+2);
-  const perTile=Math.max(2.4,5-(n-1)*0.035)*(hard?0.9:1);
-  return {n,hard,triples,types,layers,L,pNew:Math.min(0.75,0.35+n*0.01),
+  const perTile=(n<=2?5:(n<=68?4.6-(n-3)*0.04:Math.max(1.6,2.0-(n-68)*0.004)))*(hard?0.88:1);
+  return {n,hard,triples,types,layers,L,shape:shapeFor(n)[0],shapeName:shapeFor(n)[1],pNew:Math.min(0.75,0.35+n*0.01),
     time:Math.ceil(triples*3*perTile/5)*5};
 }
 
+/* Formas del tablero (cambian cada nivel). u,v en [-1,1] */
+const SHAPES=[
+ ['corazon','Corazón',(u,v)=>{const x=u*1.25,y=-v*1.3+0.25;return Math.pow(x*x+y*y-1,3)-x*x*y*y*y<=0.05;}],
+ ['piramide','Pirámide',(u,v)=>Math.abs(u)<=(v+1)/2*1.05+0.2],
+ ['circulo','Círculo',(u,v)=>u*u+v*v<=1.2],
+ ['rombo','Rombo',(u,v)=>Math.abs(u)+Math.abs(v)<=1.25],
+ ['cruz','Cruz',(u,v)=>Math.abs(u)<=0.45||Math.abs(v)<=0.4],
+ ['reloj','Reloj de arena',(u,v)=>Math.abs(u)<=Math.abs(v)*0.95+0.3],
+ ['marco','Marco',(u,v)=>Math.max(Math.abs(u),Math.abs(v))>=0.42],
+ ['mariposa','Mariposa',(u,v)=>Math.abs(v)<=Math.abs(u)*0.95+0.35],
+ ['equis','Equis',(u,v)=>Math.abs(Math.abs(u)-Math.abs(v))<=0.5],
+ ['arco','Arco',(u,v)=>!(Math.abs(u)<0.4&&v>0.05)],
+ ['copa','Copa',(u,v)=>v<0.2?Math.abs(u)<=0.95-(v+1)*0.1:Math.abs(u)<=0.3||v>0.75],
+ ['rectangulo','Bloque',(u,v)=>true]];
+function shapeFor(n){return SHAPES[(n*5+7)%SHAPES.length];}
 function overlaps(a,b){return Math.abs(a.x-b.x)<1&&Math.abs(a.y-b.y)<1;}
 function link(tiles){
   for(const t of tiles){t.above=[];t.below=[];}
@@ -30,7 +46,7 @@ function link(tiles){
 
 function genLayout(p,r){
   const target=p.triples*3;
-  let S=0;for(let z=0;z<p.layers;z++)S+=Math.pow(0.72,z);
+  let S=0;for(let z=0;z<p.layers;z++)S+=Math.pow(0.8,z);
   let best=null;
   for(let boost=1;boost<3;boost*=1.12){
     const res=buildLayout(p,r,Math.ceil(target/S*boost));
@@ -42,18 +58,22 @@ function genLayout(p,r){
 }
 function buildLayout(p,r,B){
   const target=p.triples*3;
+  const fn=SHAPES.find(x=>x[0]===p.shape)[2];
+  const inShape=(x,y,C,R)=>fn(C>1?(x-(C-1)/2)/((C-1)/2):0,R>1?(y-(R-1)/2)/((R-1)/2):0);
+  const area=(C,R)=>{let m=0;for(let y=0;y<R;y++)for(let x=0;x<C;x++)if(inShape(x,y,C,R))m++;return m;};
   let C=7,R=8;
-  for(let c=3;c<=7;c++){let rr=Math.max(3,Math.min(8,Math.round(c*1.15)));if(c*rr*0.88>=B){C=c;R=rr;break;}}
-  const fill=Math.min(0.95,Math.max(0.6,B/(C*R)));
+  for(let c=4;c<=7;c++){let rr=Math.max(4,Math.min(8,Math.round(c*1.15)));if(area(c,rr)*0.92>=B){C=c;R=rr;break;}}
+  const fill=Math.min(0.96,Math.max(0.7,B/area(C,R)));
   let tiles=[],layers=[],tries=0;
   const maxL=p.layers+5;
   for(let z=0;z<maxL&&tiles.length<target;z++){
     const o=z%2?0.5:0,cw=C-(z%2),ch=R-(z%2);
     if(cw<1||ch<1)break;
     const prev=layers[z-1]||[],cells=[];
-    const pr=z===0?fill:0.9;
+    const pr=z===0?fill:0.95;
     for(let yi=0;yi<ch;yi++)for(let xi=0;xi<Math.ceil(cw/2);xi++){
       const x=xi+o,y=yi+o;
+      if(z===0&&!inShape(x,y,C,R))continue;
       if(z>0){const sup=prev.filter(c=>Math.abs(c.x-x)<1&&Math.abs(c.y-y)<1).length;if(sup<(z%2?3:2))continue;}
       if(r()>pr)continue;
       cells.push({x,y});const mx=(C-1)-x;if(Math.abs(mx-x)>0.01)cells.push({x:mx,y});
@@ -133,7 +153,11 @@ function genLevel(n,maxTypes){
     const asg=assignTypes(order,budget,p.L,p.pNew,r);
     if(!asg)continue;
     for(const t of tiles)t.type=asg.get(t.id);
-    return {n,p:Object.assign({},p,{triples,types}),tiles,solution:order};
+    // fichas doradas: un trío (dos en niveles difíciles) de un tipo con exactamente 3 fichas si es posible
+    const cnt={};for(const t of tiles)cnt[t.type]=(cnt[t.type]||0)+1;
+    const tl=shuffleArr(Object.keys(cnt).map(Number),r).sort((a,b)=>cnt[a]-cnt[b]);
+    const gold=tl.slice(0,Math.min(p.hard?2:1,Math.max(0,tl.length-1)));
+    return {n,p:Object.assign({},p,{triples,types}),tiles,solution:order,gold};
   }
   throw new Error('no se pudo generar nivel '+n);
 }
@@ -141,7 +165,7 @@ function genLevel(n,maxTypes){
 /* ---- Partida ---- */
 function newGame(level){
   const tiles=level.tiles.map(t=>Object.assign({},t,{where:'board'}));
-  return {n:level.n,p:level.p,tiles,tray:[],hold:[],hist:[],status:'play',moves:0};
+  return {n:level.n,p:level.p,gold:(level.gold||[]).slice(),tiles,tray:[],hold:[],hist:[],status:'play',moves:0};
 }
 function isFree(s,id){const t=s.tiles[id];if(t.where==='hold')return true;if(t.where!=='board')return false;return t.above.every(a=>s.tiles[a].where!=='board');}
 function boardLeft(s){return s.tiles.filter(t=>t.where==='board').length;}
@@ -159,7 +183,7 @@ function pick(s,id){
   const ev={ok:true,id,match:null,win:false,lose:false};
   const same=s.tray.filter(x=>s.tiles[x].type===t.type);
   if(same.length>=3){const m=same.slice(0,3);for(const x of m){s.tiles[x].where='gone';s.tray.splice(s.tray.indexOf(x),1);}
-    ev.match=m;s.hist=s.hist.filter(h=>s.tiles[h.id].where==='tray');}
+    ev.match=m;ev.gold=(s.gold||[]).includes(t.type);s.hist=s.hist.filter(h=>s.tiles[h.id].where==='tray');}
   if(s.tiles.every(x=>x.where==='gone')){s.status='win';ev.win=true;}
   else if(s.tray.length>=TRAY){s.status='lose';s.reason='full';ev.lose=true;}
   return ev;
@@ -221,7 +245,7 @@ function assignFixed(order,counts,open0,size0,r){
 function solve(s,budget){
   budget=budget||200000;let nodes=0;const seen=new Set();
   function key(st){return st.tiles.map(t=>t.where[0]).join('')+'|'+st.tray.map(i=>st.tiles[i].type).sort().join(',');}
-  function clone(st){return {n:st.n,p:st.p,tiles:st.tiles.map(t=>Object.assign({},t)),tray:st.tray.slice(),hold:st.hold.slice(),hist:[],status:st.status,moves:st.moves};}
+  function clone(st){return {n:st.n,p:st.p,gold:st.gold,tiles:st.tiles.map(t=>Object.assign({},t)),tray:st.tray.slice(),hold:st.hold.slice(),hist:[],status:st.status,moves:st.moves};}
   function rec(st){
     if(st.status==='win')return true;if(st.status!=='play')return false;
     if(++nodes>budget)throw 'budget';
@@ -236,6 +260,6 @@ function solve(s,budget){
   }
   try{return rec(clone(s));}catch(e){if(e==='budget')return null;throw e;}
 }
-const API={TRAY,HOLD,rng,levelParams,genLevel,newGame,isFree,pick,undo,remove3,shuffle,solve,boardLeft};
+const API={SHAPES,shapeFor,TRAY,HOLD,rng,levelParams,genLevel,newGame,isFree,pick,undo,remove3,shuffle,solve,boardLeft};
 if(typeof module!=='undefined'&&module.exports)module.exports=API;else root.Engine=API;
 })(this);

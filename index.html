@@ -30,6 +30,7 @@
     <div id="hLvlTag" class="tag">Nivel</div>
     <div id="hLvl" class="bigLvl">1</div>
     <div id="hInfo" class="lvlInfo"></div>
+    <div id="hScene" class="lvlScene"></div>
     <button id="bPlay" class="btn primary big">Jugar ▶</button>
   </div>
   <div class="card">
@@ -42,13 +43,14 @@
   </div>
   <details class="card how"><summary>¿Cómo se juega?</summary>
     <p>Toca una ficha <b>libre</b> (las oscuras están tapadas) y sube a la bandeja. Cuando juntas <b>3 iguales</b>, desaparecen. Si la bandeja se llena con 7 fichas, pierdes. ¡Limpia el tablero antes de que acabe el tiempo!</p>
-    <p>Ayudas: <b>↩️ Deshacer</b> la última ficha, <b>⏏️ Sacar 3</b> fichas de la bandeja y <b>🔀 Mezclar</b> el tablero. Cada 10 niveles hay un 🔥 <b>nivel difícil</b> con premio doble.</p>
+    <p>Ayudas: <b>↩️ Deshacer</b> la última ficha, <b>⏏️ Sacar 3</b> fichas de la bandeja y <b>🔀 Mezclar</b> el tablero. Las <b>✨ fichas doradas</b> dan premio: monedas, una ayuda gratis o más tiempo. Cada nivel tiene un paisaje, una hora del día y una forma distintos. Cada 10 niveles hay un 🔥 <b>nivel difícil</b> con premio doble.</p>
   </details>
   <p class="foot">Junta 3 by Julián Lenis · todos los niveles tienen solución</p>
 </section>
 
 <!-- JUEGO -->
 <section id="game" class="screen">
+  <div id="scene"></div>
   <div class="gTop">
     <button id="bPause" class="round small" aria-label="Pausa">⏸</button>
     <div class="gLvl"><span id="gLvl">Nivel 1</span><small id="gTheme"></small></div>
@@ -65,6 +67,7 @@
   </div>
   <div id="stage"></div>
   <div id="toast"></div>
+  <div id="reward"></div>
 </section>
 
 <!-- VENTANAS -->
@@ -77,6 +80,7 @@
 
 <script src="engine.js"></script>
 <script src="themes.js"></script>
+<script src="scenes.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
