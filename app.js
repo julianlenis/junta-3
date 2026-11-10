@@ -9,7 +9,11 @@ let save=load();
 function load(){let s={};try{s=JSON.parse(localStorage.getItem('j3_save')||'{}')}catch(e){}
   return Object.assign({level:1,coins:100,b:{undo:2,remove:1,shuffle:1},theme:'auto',sound:true,best:{}},s);}
 function store(){localStorage.setItem('j3_save',JSON.stringify(save));refreshCoins();}
-function themeFor(n){return save.theme==='auto'?THEMES[(n-1)%THEMES.length]:(THEMES.find(t=>t.id===save.theme)||THEMES[0]);}
+function themeFor(n,lv){
+  if(save.theme==='rota')return THEMES[(n-1)%THEMES.length];
+  if(save.theme==='auto'||!THEMES.find(t=>t.id===save.theme)){lv=lv||Engine.genLevel(n,MAXT);return mixTheme(n,new Set(lv.tiles.map(t=>t.type)),MAXT);}
+  return THEMES.find(t=>t.id===save.theme);}
+const thLabel=th=>th.label||(th.icon+' '+th.name);
 function fmt(s){s=Math.max(0,Math.ceil(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
 
 /* ---------- sonido ---------- */
@@ -28,9 +32,9 @@ function renderHome(){
   const n=save.level,p=Engine.levelParams(n,MAXT),th=themeFor(n);
   $('hLvl').textContent=n;
   $('hLvlTag').textContent=p.hard?'🔥 Nivel difícil · premio doble':'Nivel';$('hLvlTag').className='tag'+(p.hard?' hard':'');
-  $('hInfo').textContent=`${th.icon} ${th.name} · ${p.triples*3} fichas · ${p.types} tipos${p.carousel?' · 🎠 carrusel':''}`;
+  $('hInfo').textContent=`${thLabel(th)} · ${p.triples*3} fichas · ${p.types} tipos${p.carousel?' · 🎠 carrusel':''}`;
   const sc=Scenes.sceneFor(n);$('hScene').textContent=`${sc.label} · forma ${p.shapeName}`;
-  const ch=[{id:'auto',name:'Cambia cada nivel',icon:'🔄'},...THEMES];
+  const ch=[{id:'auto',name:'Mezcla',icon:'🎲'},{id:'rota',name:'Un tema por nivel',icon:'🔄'},...THEMES];
   $('themes').innerHTML=ch.map(t=>`<button class="chip${save.theme===t.id?' on':''}" data-t="${t.id}">${t.icon} ${t.name}</button>`).join('');
   $('shop').innerHTML=Object.keys(PRICES).map(k=>`<div class="shopItem"><div class="si">${BICON[k]}</div><div class="sn">${BNAME[k]}</div><div class="sh">Tienes ${save.b[k]}</div><button data-buy="${k}">🪙 ${PRICES[k]}</button></div>`).join('');
 }
@@ -48,13 +52,13 @@ let G=null; // {lv,s,theme,els,time,left,visTray,paused}
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('show',s.id===id));}
 function startLevel(n){
   const lv=Engine.genLevel(n,MAXT);
-  const th=themeFor(n);
+  const th=themeFor(n,lv);
   const sc=Scenes.sceneFor(n);
   G={n,lv,sc,s:Engine.newGame(lv),theme:th,els:{},visTray:null,last:performance.now(),over:false,golds:0,used:0,off:0,car:null};
   $('carousel').classList.toggle('on',lv.p.carousel>0);
   $('scene').innerHTML=Scenes.sceneSVG(sc)+'<div id="fx">'+Scenes.fxHTML(sc)+'</div>';
   show('game');
-  $('gLvl').textContent=(lv.p.hard?'🔥 ':'')+'Nivel '+n;$('gTheme').textContent=th.icon+' '+th.name+' · '+sc.land.icon+' '+sc.land.name;
+  $('gLvl').textContent=(lv.p.hard?'🔥 ':'')+'Nivel '+n;$('gTheme').textContent=(th.mix?'🎲 '+th.mix.map(t=>t.icon).join(''):thLabel(th))+' · '+sc.land.icon+' '+sc.land.name;
   const st=$('stage');st.innerHTML='';
   for(const t of G.s.tiles){
     const el=document.createElement('div');el.className='tile in';el.dataset.id=t.id;

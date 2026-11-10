@@ -221,6 +221,64 @@ const THEMES=[
  {id:'deportes',name:'Pelotas y bates',icon:'⚾',items:['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🎱','🏓','🏸','🏒','🏑','🥍','🏏','⛳','🎳','🥏','🥊','🥌','🛹',...SPORT_SVG.map(s=>({h:s}))]},
  {id:'perros',name:'Perros',icon:'🐕',items:[...DOG_SVG.map(h=>({h})),'🐶','🐕','🐩','🦮']},
  {id:'vehiculos',name:'Vehículos',icon:'🚌',items:[...VEH_SVG.map(h=>({h})),'🚙','🚌','✈️','🚜','🛵']}];
-const API={THEMES,crestSVG};
+
+/* ---- Mezcla: varios temas en el mismo nivel (v6) ---- */
+// Grupos de fichas que se parecen a tamaño de ficha: en una mezcla no se juntan dos del mismo grupo.
+const SIMILAR={
+ frutas:[['🍎','🍅','🍒'],['🍏','🍐'],['🍊','🥭','🍑'],['🥦','🥬'],['🌶️','🫑'],['🫐','🍇'],['🍈','🍉']],
+ animales:[['🐯','🦁','🐱'],['🐭','🐹'],['🐨','🐼']],
+ escudos:Array.from({length:12},(_,k)=>[k,k+12,k+24]),
+ objetos:[['🎤','🎧'],['🔦','💡'],['🔔','⏰']],
+ flores:[['🌸','💮','🏵️'],['🌹','🥀'],['🌷','🌺'],['🌻','🌼'],...Array.from({length:8},(_,k)=>[14+k,22+k])],
+ banderas:[[1,15],[8,9,16],[3,12,4],[5,6],[2,7],[19,20,22,29],[18,10],[13,23],[17,31,24],[11,28]],
+ comidas:[['🌮','🌯'],['🍣','🍙'],['🧁','🎂'],['🥞','🧇'],['🍩','🍪'],['🥐','🥨'],['🍔','🥪']],
+ letras:[['O','Q'],['C','G'],['E','F'],['M','N','Ñ'],['L','LL'],['R','RR','P','B'],['I','J'],['U','V'],['CH','LL','RR']],
+ deportes:[['⚾','🥎'],['🏉','🏈'],['🏒','🏑','🥍'],['🎱',27,28],['🏀',26],[22,'⛳'],['🏏',23],['🏓','🏸']],
+ perros:[[0,4,8,9],[1,7],[2,17,28],[11,20],[10,24,26],[14,22],[3,25],[6,27]],
+ vehiculos:[[0,1,8],[5,10],[12,14,17,26],[18,27],[19,20,21],[4,25]]};
+const CHIHUAHUAS=[0,1,2,3,4,5,6,7,8,9];
+const itemKey=it=>typeof it==='string'?it:it.h;
+const letterOf=(t,i)=>t.id==='letras'?LETTERS[i]:null;
+function groupsOf(t){ // índice -> lista de ids de grupo
+  const g=new Map(),list=SIMILAR[t.id]||[];
+  list.forEach((grp,gi)=>grp.forEach(x=>{let i=typeof x==='number'?x:t.items.findIndex((it,k)=>it===x||letterOf(t,k)===x);
+    if(i>=0){if(!g.has(i))g.set(i,[]);g.get(i).push(t.id+gi);}}));
+  return g;
+}
+const MIX_ORDER=[9,10,0,5,7,1,8,3,6,2,4]; // perros, vehículos, frutas, banderas, letras, animales, deportes, objetos, comidas, escudos, flores
+function mixThemesFor(n,nTypes){
+  const K=nTypes<6?2:Math.min(6,Math.max(3,Math.floor(nTypes/2)));
+  const c=Math.floor((n-1)/THEMES.length),stride=1+(c%5),start=((n-1)*3)%THEMES.length,L=THEMES.length;
+  const out=[];for(let i=0;out.length<K;i++){const t=THEMES[MIX_ORDER[(start+i*stride)%L]];if(!out.includes(t))out.push(t);}
+  return out;
+}
+/* usedTypes: tipos (0..maxT-1) que aparecen en el tablero. Devuelve un "tema" con items[tipo]. */
+function mixTheme(n,usedTypes,maxT,rngF){
+  maxT=maxT||30;const used=[...usedTypes].sort((a,b)=>a-b);
+  const r=rngF||(()=>{let a=(n*2654435761)>>>0;return()=>{a=(a+0x6D2B79F5)|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};})();
+  const themes=mixThemesFor(n,used.length);
+  const slots=themes.map(()=>0);used.forEach((_,i)=>slots[i%themes.length]++);
+  const keys=new Set(),blocked=new Set(),chosen=[],from=[];
+  themes.forEach((t,ti)=>{
+    const g=groupsOf(t);
+    let cand=[...t.items.keys()];for(let i=cand.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[cand[i],cand[j]]=[cand[j],cand[i]];}
+    if(t.id==='perros')cand.sort((a,b)=>(CHIHUAHUAS.includes(b)?1:0)-(CHIHUAHUAS.includes(a)?1:0)); // chihuahuas protagonistas
+    const pick=[];
+    for(const pass of [0,1,2]){
+      for(const i of cand){if(pick.length>=slots[ti])break;if(pick.includes(i))continue;
+        const k=itemKey(t.items[i]),gs=g.get(i)||[];
+        if(pass<2&&keys.has(k))continue;if(pass<1&&gs.some(x=>blocked.has(x)))continue;
+        pick.push(i);keys.add(k);gs.forEach(x=>blocked.add(x));}
+    }
+    for(const i of pick){chosen.push(t.items[i]);from.push(t.id);}
+  });
+  // mezclar el orden para que los temas no queden agrupados por número de tipo
+  const ord=[...chosen.keys()];for(let i=ord.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[ord[i],ord[j]]=[ord[j],ord[i]];}
+  const items=new Array(maxT).fill(null),src=new Array(maxT).fill(null);
+  used.forEach((ty,k)=>{items[ty]=chosen[ord[k]];src[ty]=from[ord[k]];});
+  for(let i=0;i<maxT;i++)if(items[i]===null){items[i]=themes[0].items[i%themes[0].items.length];src[i]=themes[0].id;}
+  return {id:'mezcla',name:'Mezcla',icon:'🎲',mix:themes,items,src,label:'🎲 Mezcla '+themes.map(t=>t.icon).join('')};
+}
+const API={THEMES,crestSVG,mixTheme,mixThemesFor,SIMILAR};
 if(typeof module!=='undefined'&&module.exports)module.exports=API;else Object.assign(root,API);
 })(this);
