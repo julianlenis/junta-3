@@ -11,12 +11,13 @@ function levelParams(n,maxTypes){
   maxTypes=maxTypes||18;
   const hard=n%10===0;
   // Sin tiempo. Más difícil desde el nivel 1 y sigue subiendo sin parar de crecer hasta ~nivel 115.
-  let triples=Math.min(10+Math.floor((n-1)*1.3),60)+Math.min(Math.floor(Math.max(0,n-45)/6),12);
-  if(hard)triples=Math.min(Math.round(triples*1.25)+1,80);
-  let types=Math.min(5+Math.floor((n-1)/1.8)+(hard?2:0),maxTypes);
+  // v5: un poco más exigente: nivel 1 = 36 fichas de 6 tipos (antes 30/5), crece algo más rápido y topa más alto.
+  let triples=Math.min(12+Math.floor((n-1)*1.4),62)+Math.min(Math.floor(Math.max(0,n-40)/6),12);
+  if(hard)triples=Math.min(Math.round(triples*1.25)+1,84);
+  let types=Math.min(6+Math.floor((n-1)/1.6)+(hard?2:0),maxTypes);
   types=Math.min(types,triples);
-  const layers=Math.min(3+Math.floor((n-1)/3)+(hard?1:0),13);
-  let L=n<=1?3:Math.min(6,3+Math.floor((n-2)/6));
+  const layers=Math.min(3+Math.floor(n/3)+(hard?1:0),13);
+  let L=n<=1?3:Math.min(6,3+Math.floor((n-2)/7));
   if(hard)L=Math.min(6,L+2);
   // carrusel: cada 3 niveles y en los difíciles
   const carousel=(n%3===0||hard)?Math.min(15,(hard?9:6)+3*Math.floor(n/15)):0;
